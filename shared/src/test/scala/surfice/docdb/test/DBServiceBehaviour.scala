@@ -7,8 +7,8 @@ package surfice.docdb.test
 
 import surf.ServiceRef
 import surf.dsl._
-import surfice.docdb.DB
-import surfice.docdb.DBService.{Get, Put}
+import surfice.docdb.{PropsDoc, DB}
+import surfice.docdb.DBService._
 import utest._
 
 import scala.concurrent.ExecutionContext
@@ -21,16 +21,37 @@ trait DBServiceBehaviour extends TestBase {
   def createDoc(id: String, props: (String,Any)*): Any
   def checkDoc(doc: Any, id: String, props: (String,Any)*): Boolean
 
+  val propsDoc =  PropsDoc("d2",
+          "hello" -> "world",
+          "int" -> 42,
+          "bool" -> true,
+          "double" -> 123.456D,
+          "complex.key" -> "test")
+
   val tests = TestSuite {
     implicit val db = createDB()
     val service = createDBService()
     'putAndGet-{
-      val doc = createDoc("d1", "hello" -> "world")
-      (Put(doc) >> service :: transform {
-        case _ => Get("d1")
-      } :: service).future.map{
-        case doc =>
-          assert( checkDoc(doc,"d1") )
+      'native-{
+        val doc = createDoc("d1", "hello" -> "world")
+        (Put(doc) >> service :: transform {
+          case _ => Get("d1")
+        } :: service).future.map {
+          case Doc(doc) => assert(checkDoc(doc, "d1"))
+        }
+      }
+      'props-{
+        (PutProps(propsDoc) >> service :: transform {
+          case _ => GetProps("d2")
+        } :: service).future.map {
+          case Props(doc) => assert(
+            doc("hello") == "world",
+            doc("int") == 42,
+            doc("bool") == true,
+            doc("double") == 123.456D,
+            doc("complex.key") == "test"
+          )
+        }
       }
     }
   }

@@ -8,6 +8,7 @@ package surfice.docdb.pouchdb.test
 import surfice.docdb.pouchdb.{PouchDB, PouchDBOptions}
 import surfice.docdb.test.TestBase
 import utest._
+import scala.scalajs.js.UndefOr
 import scala.util.Success
 import scalajs.concurrent.JSExecutionContext.Implicits.runNow
 

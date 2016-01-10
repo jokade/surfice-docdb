@@ -23,6 +23,7 @@ class PouchDB extends js.Object {
 
   def get(docId: String): PouchPromise = js.native
   def put(doc: js.Any, docId: UndefOr[String] = undefined, docRev: UndefOr[String] = undefined, options: UndefOr[js.Object] = undefined) : PouchPromise = js.native
+  def destroy(): PouchPromise = js.native
 }
 
 case class PouchDBHandle(js: PouchDB) extends DB

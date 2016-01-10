@@ -5,9 +5,10 @@
 // Copyright (c) 2016. Distributed under the MIT License (see included LICENSE file).
 package surfice.docdb
 
+import com.sun.corba.se.impl.protocol.giopmsgheaders.RequestMessage
 import surf.Service
 import surf.Service.Processor
-import surfice.docdb.DBService.{Get, Put, OpenDB}
+import surfice.docdb.DBService._
 
 import scala.language.implicitConversions
 
@@ -19,12 +20,16 @@ abstract class DBService[DBHandleType, DocType, IdType] extends Service {
 
   def openDB(url: String): Unit
   def get(id: IdType, db: DBHandleType): Unit
+  def getProps(id: IdType, db: DBHandleType): Unit
   def put(doc: DocType, db: DBHandleType): Unit
+  def putProps(doc: PropsDoc, db: DBHandleType): Unit
 
   override val process: Processor = {
     case OpenDB(url) if isRequest => openDB(url)
     case m: Get      if isRequest => get(m.id,m.db)
+    case m: GetProps if isRequest => getProps(m.id,m.db)
     case m: Put                   => put(m.doc,m.db)
+    case m: PutProps              => putProps(m.doc,m.db)
   }
 }
 
@@ -36,9 +41,53 @@ object DBService {
 
   case class DBHandle(db: DB)
 
+  /**
+   * Requests the native document with the specified id.
+   *
+   * @param id document ID
+   * @param db DB to be used for the request.
+   *
+   * @return [[Doc]]
+   */
   case class Get(id: Any)(implicit val db: DB)
 
+  /**
+   * Requests the [[PropsDoc]] with the specified id.
+   *
+   * @param id document ID.
+   * @param db DB to be used for the request.
+   *
+   * @return [[Props]]
+   */
+  case class GetProps(id: Any)(implicit val db: DB)
+
+  /**
+   * Request to save (create or update) a native document.
+   *
+   * @param doc
+   * @param db
+   */
   case class Put(doc: Any)(implicit val db: DB)
 
-  case class NativeDoc(doc: Any)
+  /**
+   * Request to save (create or update) a properties document.
+   *
+   * @param doc
+   * @param db
+   */
+  case class PutProps(doc: PropsDoc)(implicit val db: DB)
+
+  /**
+   * Response for an operation that returns a native document.
+   *
+   * @param doc native represenation of the requested Document
+   */
+  case class Doc(doc: Any)
+
+  /**
+   * Response for an operation that returns a [[PropsDoc]].
+   *
+   * @param doc [[PropsDoc]] representation of the requested document.
+   */
+  case class Props(doc: PropsDoc)
 }

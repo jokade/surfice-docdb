@@ -5,11 +5,12 @@
 // Copyright (c) 2016. Distributed under the MIT License (see included LICENSE file).
 package surfice.docdb.pouchdb
 
-import surfice.docdb.{DB, DBService}
-import surfice.docdb.DBService.{DBHandle, OpenDB}
+import surfice.docdb.DBService.{Props, DBHandle, Doc}
+import surfice.docdb.{DictionaryPropsDoc, PropsDoc, DB, DBService}
 
-import scala.scalajs.js
 import scala.language.implicitConversions
+import scala.scalajs.js
+import scalajs.js.JSConverters._
 
 final class PouchDBService extends DBService[PouchDB,js.Object,String] {
 
@@ -25,7 +26,11 @@ final class PouchDBService extends DBService[PouchDB,js.Object,String] {
     case _ => throw PouchException(s"Invalid id for PouchDB: '$id'")
   }
 
-  override def get(id: String, db: PouchDB): Unit = completeWith {
+  override def get(id: String, db: PouchDB): Unit = completeWithNativeDoc {
+    db.get(id)
+  }
+
+  override def getProps(id: String, db: PouchDB): Unit = completeWithProps {
     db.get(id)
   }
 
@@ -33,18 +38,41 @@ final class PouchDBService extends DBService[PouchDB,js.Object,String] {
     db.put(doc)
   }
 
+  override def putProps(doc: PropsDoc, db: PouchDB): Unit = put( propsToNative(doc), db )
+
   override def openDB(url: String): Unit = {
     if(!_initialized)
       PouchDB.init()
     request ! DBHandle( new PouchDBHandle(new PouchDB(url)) )
   }
 
+  private def propsToNative(props: PropsDoc): js.Object = props match {
+    case DictionaryPropsDoc(dict) => dict
+    case p =>
+      val dict = p.toMap.toJSDictionary
+      p.id.foreach( id => dict("_id") = id)
+      dict
+  }
+
+  private def nativeToProps(doc: js.Any): PropsDoc = DictionaryPropsDoc(doc.asInstanceOf[js.Dictionary[js.Any]])
+
   @inline
   private def completeWith(p: PouchPromise) : Unit = p.andThen(
     (data:js.Any) => { request ! data },
-    (err:PouchError) => {throw PouchException(err)}
+    (err:PouchError) => { request.failure(PouchException(err)) }
   )
 
+  @inline
+  private def completeWithNativeDoc(p: PouchPromise) : Unit = p.andThen(
+    (data:js.Any) => { request ! Doc( data ) },
+    (err:PouchError) => { request.failure(PouchException(err))}
+  )
+
+  @inline
+  private def completeWithProps(p: PouchPromise): Unit = p.andThen(
+    (data:js.Any) => { request ! Props( nativeToProps(data) ) },
+    (err:PouchError) => { request.failure(PouchException(err)) }
+  )
 
 }
 
