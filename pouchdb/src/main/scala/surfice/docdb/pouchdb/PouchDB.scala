@@ -21,8 +21,11 @@ class PouchDB extends js.Object {
 
   var _db_name: String = js.native
 
-  def get(docId: String): PouchPromise = js.native
+  def get(docId: String, options: UndefOr[GetOptions] = undefined): PouchPromise = js.native
+  def allDocs(options: UndefOr[AllDocsOptions] = undefined): PouchPromise = js.native
   def put(doc: js.Any, docId: UndefOr[String] = undefined, docRev: UndefOr[String] = undefined, options: UndefOr[js.Object] = undefined) : PouchPromise = js.native
+  def remove(doc: js.Any): PouchPromise = js.native
+  def remove(docId: String, docRev: String): PouchPromise = js.native
   def destroy(): PouchPromise = js.native
 }
 
@@ -47,7 +50,7 @@ trait PouchDBOptions extends js.Object
 
 object PouchDBOptions {
   def apply(db: UndefOr[js.Dynamic] = undefined) : PouchDBOptions = {
-    val opts = js.Object().asInstanceOf[js.Dynamic]
+    val opts = js.Dynamic.literal()
     if(db.isDefined)
       opts.db = db
     opts.asInstanceOf[PouchDBOptions]
@@ -88,4 +91,64 @@ object PouchPromise {
 trait PouchError extends js.Object {
   def status: Int = js.native
   def message: String = js.native
+}
+
+@js.native
+trait GetOptions extends js.Object
+
+object GetOptions {
+
+  def apply(revs: UndefOr[Boolean] = undefined,
+            revs_info: UndefOr[Boolean] = undefined,
+            open_revs: UndefOr[js.Dynamic] = undefined,
+            rev: UndefOr[String] = undefined,
+            attachments: UndefOr[Boolean] = undefined) : GetOptions = {
+    val opts = js.Dynamic.literal()
+    if (revs.isDefined)
+      opts.revs = revs
+    if (revs_info.isDefined)
+      opts.revs_info = revs_info
+    if (open_revs.isDefined)
+      opts.open_revs = open_revs
+    if (rev.isDefined)
+      opts.rev = rev
+    if (attachments.isDefined)
+      opts.attachements = attachments
+    opts.asInstanceOf[GetOptions]
+  }
+}
+
+@js.native
+trait AllDocsOptions extends js.Object
+
+object AllDocsOptions {
+  def apply(startkey: UndefOr[String] = undefined,
+            endkey: UndefOr[String] = undefined) : AllDocsOptions = {
+    val opts = js.Dynamic.literal()
+    if(startkey.isDefined)
+      opts.startkey = startkey
+    if(endkey.isDefined)
+      opts.endkey = endkey
+    opts.asInstanceOf[AllDocsOptions]
+  }
+}
+
+@js.native
+trait PouchDoc extends js.Object {
+  def _id: UndefOr[String] = js.native
+  def _rev: UndefOr[String] = js.native
+}
+
+@js.native
+trait ListResponse extends js.Object {
+  def offset: Int = js.native
+  def total_rows: Int = js.native
+  def rows: js.Array[ListResponseEntry] = js.native
+}
+
+@js.native
+trait ListResponseEntry extends js.Object {
+  def doc: UndefOr[js.Any] = js.native
+  def id: UndefOr[String] = js.native
+  def key: UndefOr[String] = js.native
 }

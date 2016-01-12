@@ -32,6 +32,11 @@ trait DBServiceBehaviour extends TestBase {
     implicit val db = createDB()
     val service = createDBService()
     'putAndGet-{
+      'prepare-{
+        // TODO: using merge() to wait for both futures seems to result in a deadlock!
+        Put(createDoc("e1", "hello" -> "there")) >> service
+        Put(createDoc("e4", "hello" -> "there")) >> service
+      }
       'native-{
         val doc = createDoc("d1", "hello" -> "world")
         (Put(doc) >> service :: transform {
@@ -51,6 +56,21 @@ trait DBServiceBehaviour extends TestBase {
             doc("double") == 123.456D,
             doc("complex.key") == "test"
           )
+        }
+      }
+    }
+
+    'getAll-{
+      'native-{
+        (GetAll(None) >> service).future map {
+          case DocList(res) => assert( res.size == 4 )
+        }
+      }
+    }
+    'getAllWithPrefix-{
+      'native-{
+        (GetAll(Some("d")) >> service).future map {
+          case DocList(res) => assert( res.size == 2 )
         }
       }
     }

@@ -14,9 +14,9 @@ import scala.concurrent.ExecutionContext
 import scala.scalajs.js
 
 object PouchDBServiceTest extends DBServiceBehaviour with DBProvider {
-  override implicit def executionContext: ExecutionContext = scalajs.concurrent.JSExecutionContext.runNow
+  override implicit def executionContext: ExecutionContext = scalajs.concurrent.JSExecutionContext.queue
 
-  override def createDBService(): ServiceRef = surf.ServiceRefFactory.Sync.serviceOf(new PouchDBService)
+  override def createDBService(): ServiceRef = surf.ServiceRefFactory.Async.serviceOf(new PouchDBService)
 
   override def createDoc(id: String, props: (String, Any)*): Any = {
     val o = js.Dictionary[js.Any]("_id"->id)
